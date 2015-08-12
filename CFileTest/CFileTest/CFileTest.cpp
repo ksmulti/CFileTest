@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "CFileTest.h"
+#include <afx.h>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -79,7 +80,6 @@ void OpenFileTryCatch()
 	}
 	catch (CFileException* e)
 	{
-		cout << e->m_cause;
 		e->ReportError();
 		e->Delete();
 	}
@@ -154,4 +154,29 @@ void EnumerateFolders()
 		} while (::FindNextFile(hFind, &fd));
 		::FindClose(hFind);
 	}
+}
+
+class CLine : public CObject
+{
+	DECLARE_SERIAL(CLine)
+
+protected:
+	CPoint m_ptFrom;
+	CPoint m_ptTo;
+
+public:
+	CLine() {}
+	CLine (CPoint from, CPoint to) { m_ptFrom = from; m_ptTo = to; }
+	void Serialize(CArchive& ar);
+};
+
+IMPLEMENT_SERIAL(CLine, CObject, 1)
+
+void CLine::Serialize(CArchive& ar)
+{
+	CObject::Serialize(ar);
+	if (ar.IsStoring())
+		ar << m_ptFrom << m_ptTo;
+	else
+		ar >> m_ptFrom >> m_ptTo;
 }
