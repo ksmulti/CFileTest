@@ -54,7 +54,9 @@ void MyTest()
 	//CreateFile();
 	//ReadAndWrite();
 	//FindFile();
-	EnumerateFolders();
+	//EnumerateFolders();
+	MySerialize();
+
 	getchar();
 }
 
@@ -156,27 +158,38 @@ void EnumerateFolders()
 	}
 }
 
-class CLine : public CObject
+void MySerialize()
 {
-	DECLARE_SERIAL(CLine)
+	CPoint p1(5, 5);
+	CPoint p2(10, 10);
+	CLine l1(p1, p2, RGB(5, 5, 5));
+	CFile file(_T("File.txt"), CFile::modeReadWrite|CFile::modeCreate);
+	CArchive ar(&file, CArchive::store);
+	//l1.Serialize(ar);
+	ar << &l1;
+}
 
-protected:
-	CPoint m_ptFrom;
-	CPoint m_ptTo;
-
-public:
-	CLine() {}
-	CLine (CPoint from, CPoint to) { m_ptFrom = from; m_ptTo = to; }
-	void Serialize(CArchive& ar);
-};
-
-IMPLEMENT_SERIAL(CLine, CObject, 1)
-
+IMPLEMENT_SERIAL(CLine, CObject, 2 | VERSIONABLE_SCHEMA)
 void CLine::Serialize(CArchive& ar)
 {
 	CObject::Serialize(ar);
 	if (ar.IsStoring())
-		ar << m_ptFrom << m_ptTo;
+		ar << m_ptFrom << m_ptTo << m_clrLine;
 	else
-		ar >> m_ptFrom >> m_ptTo;
+	{
+		UINT nSchema = ar.GetObjectSchema();
+		switch (nSchema)
+		{
+		case 1: //Version 1 CLine
+			ar >> m_ptFrom >> m_ptTo;
+			m_clrLine = RGB(0, 0, 0);
+			break;
+		case 2: // Version 2 Line
+			ar >> m_ptFrom >> m_ptTo >> m_clrLine;
+			break;
+		default:
+			AfxThrowArchiveException(CArchiveException::badSchema);
+			break;
+		}
+	}
 }
